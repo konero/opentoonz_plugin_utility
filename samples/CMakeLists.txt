@@ -1,34 +1,30 @@
-cmake_minimum_required(VERSION 2.4)
-project(opentoonz_plugin_utility_samples)
+cmake_minimum_required(VERSION 3.20)
+project(opentoonz_plugin_utility_samples LANGUAGES CXX)
 
-if(WIN32)
-    if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-        set(PLATFORM1 32)
-        set(PLATFORM2)
-    else()
-        set(PLATFORM1 64)
-        set(PLATFORM2 _64)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if(MSVC)
+    add_compile_options(/MP /openmp)
+else()
+    find_package(OpenMP QUIET)
+    if(OpenMP_CXX_FOUND)
+        add_compile_options(${OpenMP_CXX_FLAGS})
+        add_link_options(${OpenMP_CXX_FLAGS})
     endif()
-
-    if(PLATFORM1 EQUAL 64)
-        add_definitions(-Dx64)
-    endif()
-
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /openmp")
-    set(PLUGIN_UTILITY_LIB "${CMAKE_CURRENT_SOURCE_DIR}/../lib/${CMAKE_CFG_INTDIR}/libopentoonz_plugin_utility")
-endif(WIN32)
-
-if(APPLE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -stdlib=libc++")
-    set(PLUGIN_UTILITY_LIB "${CMAKE_CURRENT_SOURCE_DIR}/../lib/${CMAKE_CFG_INTDIR}/libopentoonz_plugin_utility.a")
-endif(APPLE)
+endif()
 
 find_package(OpenCV REQUIRED)
 
+if(WIN32)
+    set(PLUGIN_UTILITY_LIB "${CMAKE_CURRENT_SOURCE_DIR}/../lib/${CMAKE_CFG_INTDIR}/opentoonz_plugin_utility.lib")
+else()
+    set(PLUGIN_UTILITY_LIB "${CMAKE_CURRENT_SOURCE_DIR}/../lib/${CMAKE_CFG_INTDIR}/libopentoonz_plugin_utility.a")
+endif()
+
 set(LIBS ${OpenCV_LIBS} ${PLUGIN_UTILITY_LIB})
 
-include_directories(../plugin_sdk/core ../include "${OpenCV_INCLUDE_DIRS}")
-link_directories("${OpenCV_LIBS}")
+include_directories(../plugin_sdk/core ../include ${OpenCV_INCLUDE_DIRS})
 
 add_subdirectory(amp)
 add_subdirectory(blur)

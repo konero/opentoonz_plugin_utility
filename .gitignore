@@ -8,7 +8,6 @@ lib
 # Tools
 .idea
 
-
 # Compiled Object files
 *.slo
 *.lo
@@ -37,3 +36,13 @@ lib
 *.exe
 *.out
 *.app
+
+# Local build outputs
+/# Ignore top-level build directory created by CMake
+/build/
+
+# Ignore tools folder at repo root
+/tools/
+
+# Ignore samples binary output
+/samples/bin/

@@ -1,58 +1,45 @@
-cmake_minimum_required(VERSION 2.4)
-cmake_policy(SET CMP0015 NEW)
-project(opentoonz_plugin_utility)
+cmake_minimum_required(VERSION 3.20)
+project(opentoonz_plugin_utility LANGUAGES CXX)
 
-if(WIN32)
-    if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-        set(PLATFORM1 32)
-        set(PLATFORM2)
-    else()
-        set(PLATFORM1 64)
-        set(PLATFORM2 _64)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    add_compile_definitions(x64)
+endif()
+
+if(MSVC)
+    add_compile_options(/MP /openmp)
+else()
+    find_package(OpenMP QUIET)
+    if(OpenMP_CXX_FOUND)
+        add_compile_options(${OpenMP_CXX_FLAGS})
+        add_link_options(${OpenMP_CXX_FLAGS})
     endif()
-
-    if(PLATFORM1 EQUAL 64)
-        add_definitions(-Dx64)
-    endif()
-
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /openmp")
-endif(WIN32)
-
-if(APPLE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
-endif(APPLE)
+endif()
 
 find_package(OpenCV REQUIRED)
-set(LIBS ${OpenCV_LIBS})
 
-include_directories(plugin_sdk/core include "${OpenCV_INCLUDE_DIRS}")
-link_directories("${OpenCV_LIBS}")
+set(SOURCES src/lib.cpp)
 
-set(HEADERS
-    include/toonz_utility.hpp)
+add_library(opentoonz_plugin_utility STATIC ${SOURCES} include/toonz_utility.hpp)
 
-set(SOURCES
-	src/lib.cpp)
+target_include_directories(opentoonz_plugin_utility
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/plugin_sdk/core>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        ${OpenCV_INCLUDE_DIRS}
+)
 
-set(LIBNAME opentoonz_plugin_utility)
+if(TARGET OpenCV::OpenCV)
+    target_link_libraries(opentoonz_plugin_utility PRIVATE OpenCV::OpenCV)
+else()
+    target_link_libraries(opentoonz_plugin_utility PRIVATE ${OpenCV_LIBS})
+endif()
 
-add_library(${LIBNAME} STATIC ${HEADERS} ${SOURCES})
-
-set_target_properties(${LIBNAME} PROPERTIES
-	ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/lib"
-	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/lib"
-	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
-
-if(WIN32)
-	set_target_properties(${LIBNAME} PROPERTIES
-		PREFIX "lib"
-		SUFFIX ".lib")
-endif(WIN32)
-
-if(MAC)
-	set_target_properties(${LIBNAME} PROPERTIES
-		PREFIX "lib"
-		SUFFIX ".a")
-endif(MAC)
-
-target_link_libraries(${LIBNAME} ${LIBS})
+set_target_properties(opentoonz_plugin_utility PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/lib/$<CONFIG>"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/lib/$<CONFIG>"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin/$<CONFIG>"
+)
